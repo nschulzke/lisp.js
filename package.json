@@ -1,0 +1,19 @@
+{
+  "name": "lisp.js",
+  "version": "1.0.0",
+  "description": "A JavaScript Lisp",
+  "main": "index.js",
+  "author": "Nathan Schulzke",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest --watch"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "jest": "^23.1.0"
+  },
+  "dependencies": {
+    "chalk": "^2.4.1"
+  }
+}
