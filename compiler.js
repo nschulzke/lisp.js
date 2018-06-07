@@ -8,13 +8,6 @@ const atom = (token) =>
     ? token
     : Number(token);
 
-const flatten = (array) => {
-  while (array.length === 1 && Array.isArray(array[0])) {
-    array = array[0];
-  }
-  return array;
-};
-
 const parse = (tokens) => {
   if (!Array.isArray(tokens))
     throw Error('Unexpected input to parser');
@@ -31,7 +24,10 @@ const parse = (tokens) => {
     }
     token = tokens.shift();
   }
-  return flatten(list);
+  while (list.length === 1 && Array.isArray(list[0])) {
+    list = list[0];
+  }
+  return list;
 };
 
 const eval_args = (func) => (local_env, ...args) => func(...args.map(val => evaluate(val, local_env)));
@@ -47,21 +43,31 @@ const list_display = (list) => {
   return `(${list.join(' ')})`;
 };
 
-const lambda_display = (arg_names, func) => `lambda ${list_display(arg_names)} ${list_display(func)}`;
+const lambda_display = (arg_names, func) => `lambda ${display(arg_names)} ${display(func)}`;
+
+const map_display = (map) => {
+  let array = [];
+  Object.keys(map).forEach(key => {
+    array.push([key, map[key]]);
+  });
+  return `map ${display(array)}`;
+};
 
 const display = (item) => {
   if (Array.isArray(item)) {
     return list_display(item);
+  } else if (typeof item === 'object') {
+    return map_display(item);
   } else {
     return item;
   }
 };
 
-const lambda_gen = (parent_env, arg_names, func, outer_args) => {
-  if (!Array.isArray(arg_names)) {
-    arg_names = [arg_names];
-  }
-  let lambda = (_, ...args) => {
+const wrap_array = (...items) => items;
+
+const lambda_gen = (parent_env, arg_names, func) => {
+  arg_names = wrap_array(...arg_names);
+  let lambda = eval_args((...args) => {
     let local_env = env(parent_env);
     arg_names.forEach((arg, index) => {
       if (local_env[args[index]] !== undefined) {
@@ -80,32 +86,47 @@ const lambda_gen = (parent_env, arg_names, func, outer_args) => {
       inner_lambda.toString = () => lambda_display(inner_arg_names, ['lambda', arg_names, func, [...args, ...inner_arg_names]]);
       return inner_lambda;
     }
-  };
+  });
   lambda.toString = () => lambda_display(arg_names, func);
-  if (outer_args !== undefined) {
-    // console.log('env', parent_env);
-    // console.log('lambda', lambda.toString());
-    // console.log('outer', outer_args);
-    // console.log('called', lambda(parent_env, ...outer_args).toString());
-    return lambda(parent_env, ...outer_args);
-  }
   return lambda;
 };
 
-const env = (parent_env = {}) => ({
-  'begin': (_, ...exps) => exps.map((exp) => evaluate(exp))[exps.length - 1],
-  'let': (_, symbol, exp) => global_env[symbol] = evaluate(exp),
+const map_gen = (parent_env, ...pairs) => {
+  let map = {};
+  pairs.forEach(pair => map[pair[0]] = pair[1]);
+  let access = (_, key) => {
+    return map[key];
+  };
+  access.toString = () => map_display(map);
+  return access;
+};
+
+const default_env = {
+  'begin': (parent_env, ...exps) => {
+    const local_env = env(parent_env);
+    return exps.map((exp) => evaluate(exp, local_env))[exps.length - 1];
+  },
+  'let': (local_env, symbol, exp) => {
+    if (local_env[symbol] !== undefined) {
+      throw Error(`Symbol already defined: ${symbol}`);
+    }
+    local_env[symbol] = evaluate(exp, local_env);
+  },
   'lambda': lambda_gen,
+  'map': map_gen,
   'list': (_, ...args) => args,
   '+': eval_args((a, b) => a + b),
   '-': eval_args((a, b) => a - b),
   '*': eval_args((a, b) => a * b),
   '/': eval_args((a, b) => a / b),
   'pi': Math.PI,
+};
+
+const env = (parent_env = {}) => ({
   ...parent_env,
 });
 
-const global_env = env();
+const global_env = env(default_env);
 
 const evaluate = (value, local_env = global_env) => {
   if (Array.isArray(value)) {
@@ -115,6 +136,11 @@ const evaluate = (value, local_env = global_env) => {
       } else {
         return local_env[value[0]];
       }
+    } else if (Array.isArray(value[0])) {
+      value[0] = evaluate(value[0], local_env);
+      return evaluate(value, local_env);
+    } else if (typeof value[0] === 'function') {
+      return value[0](local_env, ...value.slice(1));
     } else {
       throw Error(`Undefined value ${value[0]}`);
     }

@@ -53,67 +53,127 @@ const EVALUATED_4 = 9;
 
 describe('run', () => {
   it('curries lambdas', () => {
-    expect(run(
-      `
+    expect(run(`
       begin
       (let three
         (lambda (a b c) (+ a (+ b c))))
       (let two (three 2))
       (let one (two 2))
       (one 2)
-      `
-    )).toEqual(6);
+    `)).toEqual(6);
   });
   it('allows running lambdas', () => {
-    expect(run(
-      `
-      (lambda (a) (* a a) (3))
-      `
-    )).toEqual(9);
+    expect(run(`
+        (lambda
+          (a)
+          (* a a)
+        ) 3
+    `)).toEqual(9);
   });
   it('allows defining automatically called lambdas', () => {
-    expect(run(
-      `
+    expect(run(`
       begin
-      (let square3
-        (lambda (a) (* a a) (3))
-      )
+      (let square3 (
+        (lambda
+          a
+          (* a a)
+        ) 3
+      ))
       (square3)
-      `
-    )).toEqual(9);
+    `)).toEqual(9);
   });
   it('allows defining partial lambdas', () => {
-    expect(run(
-      `
+    expect(run(`
       begin
       (let mult3 (
-        lambda (a b) (* a b) (3)
+        (lambda
+          (a b)
+          (* a b)
+        ) 3
       ))
       (mult3 3)
-      `
-    )).toEqual(9);
+    `)).toEqual(9);
   });
   it('allows defining nested lambdas', () => {
-    expect(run(
-      `
-      (
-        begin
-        (let two (
-          (lambda
-            (x y)
-            (
-              (lambda
-                (a b c)
-                (* a (* b c))
-                (2 x y)
-              )
-            )
+    expect(run(`
+      (begin
+        (let two (lambda
+          (x y)
+          (
+            (lambda
+              (a b c)
+              (* a (* b c))
+            ) 2 x y
           )
         ))
         (two 2 2)
       )
-      `
-    )).toEqual(8);
+    `)).toEqual(8);
+  });
+  it('allows using variables', () => {
+    expect(run(`
+      (begin
+        (let harry 2)
+        (let two ((lambda
+          (x y)
+          (
+            (lambda
+              (a b c)
+              (* a (* b c))
+            ) 2 x y
+          )
+        )))
+        (two 2 harry)
+      )
+    `)).toEqual(8);
+  });
+  it('includes lexical closure', () => {
+    expect(run(`
+      (
+        begin
+        (let harry 2)
+        (let two (lambda
+          (x y)
+          (
+            (lambda
+              (a b c)
+              (* a (* b c))
+            ) harry x y
+          )
+        ))
+        (two 2 harry)
+      )
+    `)).toEqual(8);
+  });
+  it('provides a map object which can be used to execute lambdas', () => {
+    expect(run(`
+    begin
+    (let math (map
+      (mult
+        (lambda (a b) (* a b))
+      )
+      (number 4)
+      (sub
+        (lambda (a b) (- a b))
+      )
+    ))
+    ((math mult) 3 (math number))
+    `)).toEqual(12);
+  });
+  it('provides self-access inside a map', () => {
+    expect(run(`
+    begin
+    (let math (map
+      (mult
+        (lambda (a b) (* a b))
+      )
+      (number 4)
+      (square
+        (lambda (a) ((math mult) a a))
+      )
+    ))
+    ((math square) (math number))
+    `)).toEqual(16);
   });
 });
 
