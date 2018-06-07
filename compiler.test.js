@@ -188,6 +188,76 @@ describe('run', () => {
     (range 1 6)
     `)).toEqual([1, 2, 3, 4, 5]);
   });
+  it('can define objects using begin and lambda', () => {
+    expect(run(`
+    begin
+      (let rect
+        (lambda (width height)
+          (begin
+            (map
+              (area (lambda () (* width height)))
+              (circ (lambda ()
+                (+ width (+ height (+ width height
+                )))
+              ))
+            )
+          )
+        )
+      )
+      (let r (rect 3 4))
+      ((r area) ())
+    `)).toEqual(12);
+  });
+  it('allows generation of new objects via lambdas', () => {
+    expect(run(`
+    begin
+      (let rect
+        (lambda (width height)
+          (begin
+            (map
+              (setWidth (lambda (w) (rect w height)))
+              (setHeight (lambda (h) (rect width h)))
+              (area (lambda () (* width height)))
+              (circ (lambda ()
+                (+ width (+ height (+ width height
+                )))
+              ))
+            )
+          )
+        )
+      )
+      (let r (rect 3 4))
+      (let r ((r setWidth) 4))
+      ((r area) ())
+    `)).toEqual(16);
+  });
+  it('allows tracking of internal state', () => {
+    expect(run(`
+    begin
+      (let counter
+        (begin
+          (let construct (lambda (init)
+            (begin
+              (let count init)
+              (map
+                (inc (lambda ()
+                  (construct
+                    (+ count 1)
+                  )
+                ))
+                (count count)
+              )
+            )
+          ))
+          (construct 0)
+        )
+      )
+      (let c counter)
+      (let c ((c inc) ()))
+      (let c ((c inc) ()))
+      (c count)
+    `)).toEqual(2);
+  });
 });
 
 describe('tokenize', () => {

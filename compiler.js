@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const token = /(\(|\)|[^\s()]+)/g;
 
 const tokenize = (string) =>
@@ -77,7 +79,7 @@ const lambda_gen = (parent_env, arg_names, func) => {
         local_env[arg] = args[index];
       }
     });
-    if (args.length === arg_names.length) {
+    if (args.length >= arg_names.length) {
       return evaluate(func, local_env);
     } else if (args.length === 0) {
       return lambda;
@@ -92,16 +94,16 @@ const lambda_gen = (parent_env, arg_names, func) => {
   return lambda;
 };
 
-const map_gen = (_, ...pairs) => {
+const map_gen = (parent_env, ...pairs) => {
   let map = {};
   pairs.forEach(pair => map[pair[0]] = pair[1]);
-  let access = (_, key) => map[key];
+  let access = (_, key) => evaluate(map[key], parent_env);
   access.toString = () => map_display(map);
   return access;
 };
 
 const list_gen = (parent_env, ...list) => {
-  let access = (_, index) => list[index];
+  let access = (_, index) => evaluate(list[index], parent_env);
   access.toString = () => `list ${list.join(' ')}`;
   return access;
 };
@@ -111,7 +113,8 @@ const default_env = {
     const local_env = env(parent_env);
     return exps.map((exp) => evaluate(exp, local_env))[exps.length - 1];
   },
-  'let': (local_env, symbol, exp) => {
+  'let': (local_env, symbol, exp) => local_env[symbol] = evaluate(exp, local_env),
+  'const': (local_env, symbol, exp) => {
     if (local_env[symbol] !== undefined) {
       throw Error(`Symbol already defined: ${symbol}`);
     }
@@ -136,6 +139,7 @@ const default_env = {
   '=': eval_args((a, b) => a === b),
   '!=': eval_args((a, b) => a !== b),
   'pi': Math.PI,
+  'import': (_, file) => run(fs.readFileSync(file).toString()),
 };
 
 const env = (parent_env = {}) => ({
@@ -146,7 +150,9 @@ const global_env = env(default_env);
 
 const evaluate = (value, local_env = global_env) => {
   if (Array.isArray(value)) {
-    if (local_env[value[0]] !== undefined) {
+    if (value.length === 0) {
+      return [];
+    } else if (local_env[value[0]] !== undefined) {
       if (typeof local_env[value[0]] === 'function') {
         return local_env[value[0]](local_env, ...value.slice(1));
       } else {
