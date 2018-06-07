@@ -31,6 +31,7 @@ const parse = (tokens) => {
 };
 
 const eval_args = (func) => (local_env, ...args) => func(...args.map(val => evaluate(val, local_env)));
+const list_args = (func) => (...args) => func(...args.map(val => Array.isArray(val) ? val : [val]));
 
 const list_display = (list) => {
   list = list.map(item => {
@@ -48,9 +49,9 @@ const lambda_display = (arg_names, func) => `lambda ${display(arg_names)} ${disp
 const map_display = (map) => {
   let array = [];
   Object.keys(map).forEach(key => {
-    array.push([key, map[key]]);
+    array.push(display([key, map[key]]));
   });
-  return `map ${display(array)}`;
+  return `map ${array.join(' ')}`;
 };
 
 const display = (item) => {
@@ -91,13 +92,17 @@ const lambda_gen = (parent_env, arg_names, func) => {
   return lambda;
 };
 
-const map_gen = (parent_env, ...pairs) => {
+const map_gen = (_, ...pairs) => {
   let map = {};
   pairs.forEach(pair => map[pair[0]] = pair[1]);
-  let access = (_, key) => {
-    return map[key];
-  };
+  let access = (_, key) => map[key];
   access.toString = () => map_display(map);
+  return access;
+};
+
+const list_gen = (parent_env, ...list) => {
+  let access = (_, index) => list[index];
+  access.toString = () => `list ${list.join(' ')}`;
   return access;
 };
 
@@ -110,15 +115,26 @@ const default_env = {
     if (local_env[symbol] !== undefined) {
       throw Error(`Symbol already defined: ${symbol}`);
     }
-    local_env[symbol] = evaluate(exp, local_env);
+    return local_env[symbol] = evaluate(exp, local_env);
   },
   'lambda': lambda_gen,
   'map': map_gen,
-  'list': (_, ...args) => args,
+  'list': list_gen,
+  'literal': (_, arg) => arg,
+  'if': (local_env, condition, ifTrue, ifFalse) =>
+    evaluate(condition, local_env)
+      ? evaluate(ifTrue, local_env)
+      : evaluate(ifFalse, local_env),
+  'concat': eval_args(list_args((a, b) => a.concat(...b))),
   '+': eval_args((a, b) => a + b),
   '-': eval_args((a, b) => a - b),
   '*': eval_args((a, b) => a * b),
   '/': eval_args((a, b) => a / b),
+  '>': eval_args((a, b) => a > b),
+  '>=': eval_args((a, b) => a >= b),
+  '<': eval_args((a, b) => a < b),
+  '=': eval_args((a, b) => a === b),
+  '!=': eval_args((a, b) => a !== b),
   'pi': Math.PI,
 };
 

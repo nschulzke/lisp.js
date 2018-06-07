@@ -175,6 +175,19 @@ describe('run', () => {
     ((math square) (math number))
     `)).toEqual(16);
   });
+  it('can use if and recursion to build a range function', () => {
+    expect(run(`
+    begin
+    (let range (lambda
+      (a b)
+      (if (= a b)
+        (literal ())
+        (concat a (range (+ a 1) b))
+      )
+    ))
+    (range 1 6)
+    `)).toEqual([1, 2, 3, 4, 5]);
+  });
 });
 
 describe('tokenize', () => {
