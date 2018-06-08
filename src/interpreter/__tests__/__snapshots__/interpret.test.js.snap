@@ -1,7 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`mutability checks forbids redefining const 1`] = `"Symbol already defined: hi"`;
+exports[`errors lambda call checks rejects calling a value as a lambda 1`] = `"Not a lambda: hi"`;
 
-exports[`mutability checks forbids redefining def 1`] = `"Symbol already defined: hi"`;
+exports[`errors lambda call checks rejects calling an unknown symbol as a lambda 1`] = `"Undefined symbol: hi1"`;
 
-exports[`mutability checks forbids updating const 1`] = `"Cannot change value of const: hi"`;
+exports[`errors mutability checks forbids redefining const 1`] = `"Symbol already defined: hi"`;
+
+exports[`errors mutability checks forbids redefining def 1`] = `"Symbol already defined: hi"`;
+
+exports[`errors mutability checks forbids updating const 1`] = `"Cannot change value of const: hi"`;

@@ -295,37 +295,56 @@ describe('objects', () => {
   });
 });
 
-describe('mutability checks', () => {
-  it('forbids updating const', () => {
-    expect(() => i(`
-    begin
-      (const hi 3)
-      (set hi 4)
-      hi
+describe('errors', () => {
+  describe('mutability checks', () => {
+    it('forbids updating const', () => {
+      expect(() => i(`
+      begin
+        (const hi 3)
+        (set hi 4)
+        hi
     `)).toThrowErrorMatchingSnapshot();
-  });
-  it('allows updating def', () => {
-    expect(i(`
-    begin
-      (def hi 3)
-      (set hi 4)
-      hi
+    });
+    it('allows updating def', () => {
+      expect(i(`
+      begin
+        (def hi 3)
+        (set hi 4)
+        hi
     `)).toEqual(4);
-  });
-  it('forbids redefining const', () => {
-    expect(() => i(`
-    begin
-      (const hi 3)
-      (const hi 4)
-      hi
+    });
+    it('forbids redefining const', () => {
+      expect(() => i(`
+      begin
+        (const hi 3)
+        (const hi 4)
+        hi
     `)).toThrowErrorMatchingSnapshot();
-  });
-  it('forbids redefining def', () => {
-    expect(() => i(`
-    begin
-      (def hi 3)
-      (def hi 4)
-      (hi)
+    });
+    it('forbids redefining def', () => {
+      expect(() => i(`
+      begin
+        (def hi 3)
+        (def hi 4)
+        (hi)
     `)).toThrowErrorMatchingSnapshot();
+    });
+  });
+
+  describe('lambda call checks', () => {
+    it('rejects calling an unknown symbol as a lambda', () => {
+      expect(() => i(`
+      begin
+        (def hi 3)
+        (hi1 3)
+    `)).toThrowErrorMatchingSnapshot();
+    });
+    it('rejects calling a value as a lambda', () => {
+      expect(() => i(`
+      begin
+        (def hi 3)
+        (hi 3)
+    `)).toThrowErrorMatchingSnapshot();
+    });
   });
 });

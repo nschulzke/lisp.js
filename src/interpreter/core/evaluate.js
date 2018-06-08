@@ -1,10 +1,19 @@
 const { resolve } = require('./env');
 
-const attempt_resolve = (local_env, lambda) => {
-  if (resolve(local_env, lambda) !== undefined) {
-    return resolve(local_env, lambda);
+const attempt_resolve = (local_env, symbol) => {
+  if (resolve(local_env, symbol) !== undefined) {
+    return resolve(local_env, symbol);
   } else {
-    throw Error(`Undefined symbol: ${lambda}`);
+    throw Error(`Undefined symbol: ${symbol}`);
+  }
+};
+
+const attempt_lambda = (local_env, list) => {
+  let lambda = attempt_resolve(local_env, list[0]);
+  if (typeof lambda === 'function') {
+    return lambda(local_env, ...list.slice(1));
+  } else {
+    throw Error(`Not a lambda: ${list[0]}`);
   }
 };
 
@@ -34,21 +43,21 @@ const atoms = {
 
 const lists = {
   empty: {
-    test: (_, token) =>
-      token.length === 0,
+    test: (_, list) =>
+      list.length === 0,
     make: () => [],
   },
   function: {
-    test: (_, token) =>
-      typeof token[0] === 'function',
+    test: (_, list) =>
+      typeof list[0] === 'function',
     make: (local_env, list) =>
       list[0](local_env, ...list.slice(1)),
   },
   function_ref: {
-    test: (local_env, token) =>
-      typeof token[0] === 'string',
+    test: (local_env, list) =>
+      typeof list[0] === 'string',
     make: (local_env, list) =>
-      attempt_resolve(local_env, list[0])(local_env, ...list.slice(1)),
+      attempt_lambda(local_env, list),
   },
   function_list: {
     test: (local_env, token) =>
@@ -69,7 +78,7 @@ const evaluate = (initial_env, initial_value, wrapped = false) => {
       ? lists
       : atoms;
     let error = Array.isArray(value)
-      ? `Expected function, got ${value}`
+      ? `Expected function call, got (${value.join(' ')})`
       : `Expected atom, got ${value}`;
     let result = undefined;
     Object.keys(forms).some(key => {

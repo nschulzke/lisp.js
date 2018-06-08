@@ -1,18 +1,20 @@
-const lambda = (arg_names, func) => `(lambda ${display(arg_names)} ${display(func)})`;
+const { list_join } = require('display');
+
+const lambda = (arg_names, func) => list_join(['lambda', display(arg_names), display(func)]);
 
 const map = (map) => {
   let array = [];
   Object.keys(map).forEach(key => {
     array.push(display([key, map[key]]));
   });
-  return `(map ${array.join(' ')})`;
+  return list_join(['map', ...array]);
 };
 
-const list = (list) => `(list ${list.join(' ')})`;
+const list = (list) => list_join(['list', ...list]);
 
 const display = (item) => {
   if (Array.isArray(item)) {
-    return `(${item.map(child => display(child)).join(' ')})`;
+    return list_join(item.map(child => display(child)));
   } else if (typeof item === 'object') {
     return map(item);
   } else if (typeof item === 'function' && !item.hasOwnProperty('toString')) {
