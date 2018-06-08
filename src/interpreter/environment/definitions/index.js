@@ -1,5 +1,4 @@
 module.exports = {
-  ...require('./declarations'),
   ...require('./operators'),
   ...require('./types'),
   ...require('./controls'),
