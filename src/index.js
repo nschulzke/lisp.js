@@ -1,6 +1,6 @@
 const readline = require('readline');
-const interpret = require('./interpret').interpret;
-const display = require('./interpret').display;
+const interpret = require('./interpreter').interpret;
+const display = require('./interpreter').display;
 const chalk = require('chalk');
 const fs = require('fs');
 

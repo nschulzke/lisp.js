@@ -1,4 +1,4 @@
-const { resolve } = require('./environment/resolve');
+const { resolve } = require('./env');
 
 const evaluate = (local_env, value) => {
   let resolved;

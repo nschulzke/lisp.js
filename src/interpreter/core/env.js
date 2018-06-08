@@ -19,4 +19,8 @@ const is_writable = (env, symbol) =>
       : true
     : Object.getOwnPropertyDescriptor(env, symbol).writable ? true : false;
 
-module.exports = { resolve, update, is_writable };
+const new_env = (parent = {}) => ({
+  '__parent__': parent,
+});
+
+module.exports = { resolve, update, is_writable, new_env };

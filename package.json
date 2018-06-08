@@ -2,12 +2,12 @@
   "name": "lisp.js",
   "version": "1.0.0",
   "description": "A JavaScript Lisp",
-  "main": "index.js",
+  "main": "./src/index.js",
   "author": "Nathan Schulzke",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js",
-    "test": "jest --watch"
+    "start": "NODE_PATH=./src node ./src/index.js",
+    "test": "NODE_PATH=./src jest --watch"
   },
   "devDependencies": {
     "eslint": "^4.19.1",

@@ -1,4 +1,4 @@
-const evaluate = require('../evaluate');
+const evaluate = require('interpreter/core/evaluate');
 
 const eval_args = (func) => (local_env, ...args) => func(...args.map(val => evaluate(local_env, val)));
 

@@ -1,14 +1,14 @@
+const { new_env } = require('interpreter/core/env');
+const evaluate = require('interpreter/core/evaluate');
+const { eval_args } = require('../_helpers');
 const display = require('./display');
-const evaluate = require('../evaluate');
-const create_env = require('../environment/create');
-const { eval_args } = require('../helpers');
 
 const wrap_array = (...items) => items;
 
 const lambda = (env, arg_names, func) => {
   arg_names = wrap_array(...arg_names);
   let result = eval_args((...args) => {
-    let local_env = create_env(env);
+    let local_env = new_env(env);
     arg_names.forEach((arg, index) => {
       if (local_env[args[index]] !== undefined) {
         local_env[arg] = local_env[args[index]];

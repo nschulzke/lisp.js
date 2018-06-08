@@ -1,7 +1,8 @@
-const i = require('../');
+const core = require('interpreter/index');
+const i = core.interpret;
 
 beforeEach(() => {
-  i.init();
+  core.reset();
 });
 
 describe('basic types', () => {
@@ -203,7 +204,7 @@ describe('control constructs', () => {
     (def range (lambda
       (a b)
       (if (= a b)
-        (literal ())
+        ()
         (concat a (range (+ a 1) b))
       )
     ))
