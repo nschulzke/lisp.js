@@ -1,26 +1,30 @@
-const resolve = (env, symbol) =>
-  env[symbol] === undefined
-    ? env['__parent__'] !== undefined
-      ? resolve(env['__parent__'], symbol)
-      : undefined
-    : env[symbol];
-
-const update = (env, symbol, new_value) =>
-  env[symbol] === undefined
-    ? env['__parent__'] !== undefined
-      ? update(env['__parent__'], symbol, new_value)
-      : false
-    : env[symbol] = new_value;
-
-const is_writable = (env, symbol) =>
-  env[symbol] === undefined
-    ? env['__parent__'] !== undefined
-      ? is_writable(env['__parent__'], symbol)
-      : true
-    : Object.getOwnPropertyDescriptor(env, symbol).writable ? true : false;
+const traverse = (result) => {
+  const recurse = (env, symbol, ...args) =>
+    env[symbol] === undefined
+      ? env['__parent__'] !== undefined
+        ? recurse(env['__parent__'], symbol, ...args)
+        : result.failure(env, symbol, ...args)
+      : result.success(env, symbol, ...args);
+  return recurse;
+};
 
 const new_env = (parent = {}) => ({
   '__parent__': parent,
 });
 
-module.exports = { resolve, update, is_writable, new_env };
+const resolve = traverse({
+  success: (env, symbol) => env[symbol],
+  failure: () => undefined,
+});
+
+const update = traverse({
+  success: (env, symbol, new_value) => env[symbol] = new_value,
+  failure: () => false,
+});
+
+const is_writable = traverse({
+  success: (env, symbol) => Object.getOwnPropertyDescriptor(env, symbol).writable ? true : false,
+  failure: () => true,
+});
+
+module.exports = { new_env, resolve, update, is_writable };
