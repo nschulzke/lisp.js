@@ -1,6 +1,6 @@
 const readline = require('readline');
-const run = require('./compiler').run;
-const display = require('./compiler').display;
+const interpret = require('./interpret').interpret;
+const display = require('./interpret').display;
 const chalk = require('chalk');
 const fs = require('fs');
 
@@ -22,7 +22,7 @@ if (process.argv.length === 2) {
 
   rl.on('line', line => {
     try {
-      log(run(line));
+      log(interpret(line));
     } catch (e) {
       err(e.message);
     }
@@ -37,7 +37,7 @@ if (process.argv.length === 2) {
       err(error);
     } else {
       try {
-        log(run(data.toString()));
+        log(interpret(data.toString()));
       } catch (e) {
         err(e.message);
       }

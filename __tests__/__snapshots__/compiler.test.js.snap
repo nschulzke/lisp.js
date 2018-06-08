@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`run forbids redefining const 1`] = `"Symbol already defined: hi"`;
-
-exports[`run forbids redefining def 1`] = `"Symbol already defined: hi"`;
-
-exports[`run forbids updating const 1`] = `"Cannot change value of const: hi"`;
