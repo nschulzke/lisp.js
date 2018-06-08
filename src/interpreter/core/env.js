@@ -27,4 +27,9 @@ const is_writable = traverse({
   failure: () => true,
 });
 
-module.exports = { new_env, resolve, update, is_writable };
+const is_function = traverse({
+  success: (env, symbol) => typeof env[symbol] === 'function',
+  failure: () => false,
+});
+
+module.exports = { new_env, resolve, update, is_writable, is_function };

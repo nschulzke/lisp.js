@@ -19,9 +19,6 @@ const parse = (tokens) => {
     }
     token = tokens.shift();
   }
-  while (list.length === 1 && Array.isArray(list[0])) {
-    list = list[0];
-  }
   return list;
 };
 

@@ -1,37 +1,91 @@
 const { resolve } = require('./env');
 
-const evaluate = (local_env, value) => {
-  let resolved;
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return [];
-    } else if (value.length === 1) {
-      return evaluate(local_env, value[0]);
-    } else if ((resolved = resolve(local_env, value[0])) !== undefined) {
-      if (typeof resolved === 'function') {
-        return resolved(local_env, ...value.slice(1));
-      } else {
-        return resolved;
-      }
-    } else if (Array.isArray(value[0])) {
-      value[0] = evaluate(local_env, value[0]);
-      return evaluate(local_env, value);
-    } else if (typeof value[0] === 'function') {
-      return value[0](local_env, ...value.slice(1));
-    } else {
-      throw Error(`Undefined symbol: ${value[0]}`);
-    }
+const attempt_resolve = (local_env, lambda) => {
+  if (resolve(local_env, lambda) !== undefined) {
+    return resolve(local_env, lambda);
   } else {
-    if ((resolved = resolve(local_env, value)) !== undefined) {
-      return resolved;
-    } else if (typeof value === 'string' && value[0] === '"' && value[value.length - 1] === '"') {
-      return value.slice(1, value.length - 1);
-    } else if (typeof value === 'number') {
-      return value;
-    } else {
-      throw Error(`Undefined symbol: ${value}`);
-    }
+    throw Error(`Undefined symbol: ${lambda}`);
   }
+};
+
+const atoms = {
+  symbol: {
+    test: (_, token) =>
+      typeof token === 'string'
+      && token[0] !== '"',
+    make: (local_env, token) =>
+      attempt_resolve(local_env, token),
+  },
+  number: {
+    test: (_, token) =>
+      typeof token === 'number',
+    make: (_, token) =>
+      token,
+  },
+  string: {
+    test: (_, token) =>
+      typeof token === 'string'
+      && token[0] === '"'
+      && token[token.length - 1] === '"',
+    make: (_, token) =>
+      token.slice(1, token.length - 1),
+  },
+};
+
+const lists = {
+  empty: {
+    test: (_, token) =>
+      token.length === 0,
+    make: () => [],
+  },
+  function: {
+    test: (_, token) =>
+      typeof token[0] === 'function',
+    make: (local_env, list) =>
+      list[0](local_env, ...list.slice(1)),
+  },
+  function_ref: {
+    test: (local_env, token) =>
+      typeof token[0] === 'string',
+    make: (local_env, list) =>
+      attempt_resolve(local_env, list[0])(local_env, ...list.slice(1)),
+  },
+  function_list: {
+    test: (local_env, token) =>
+      Array.isArray(token[0]),
+    make: (local_env, list, evaluate) => {
+      list[0] = evaluate(local_env, list[0]);
+      return evaluate(local_env, list);
+    }
+  },
+};
+
+const evaluate = (initial_env, initial_value, wrapped = false) => {
+  if (wrapped && Array.isArray(initial_value) && initial_value.length === 1) {
+    initial_value = initial_value[0];
+  }
+  const evaluate_inner = (local_env, value) => {
+    let forms = Array.isArray(value)
+      ? lists
+      : atoms;
+    let error = Array.isArray(value)
+      ? `Expected function, got ${value}`
+      : `Expected atom, got ${value}`;
+    let result = undefined;
+    Object.keys(forms).some(key => {
+      if (forms[key].test(local_env, value, evaluate)) {
+        result = forms[key].make(local_env, value, evaluate);
+        return true;
+      } else {
+        return false;
+      }
+    });
+    if (result === undefined) {
+      throw Error(error);
+    }
+    return result;
+  };
+  return evaluate_inner(initial_env, initial_value);
 };
 
 module.exports = evaluate;

@@ -87,7 +87,7 @@ describe('lambdas', () => {
           (* a a)
         ) 3
       ))
-      (square3)
+      square3
     `)).toEqual(9);
   });
   it('curries anonymous lambdas', () => {
@@ -180,6 +180,17 @@ describe('maps', () => {
     ((math mult) 3 (math number))
     `)).toEqual(12);
   });
+  it('can execute lambdas with zero arguments', () => {
+    expect(i(`
+    begin
+      (def x (map
+        (a (lambda ()
+          (* 3 3)
+        ))
+      ))
+      ((x a))
+    `)).toEqual(9);
+  });
   it('provides access to the map within itself', () => {
     expect(i(`
     begin
@@ -236,7 +247,7 @@ describe('objects', () => {
         )
       )
       (def r (rect 3 4))
-      ((r area) ())
+      ((r area))
     `)).toEqual(12);
   });
   it('can build an immutable object with method returns', () => {
@@ -259,7 +270,7 @@ describe('objects', () => {
       )
       (def r (rect 3 4))
       (set r ((r setWidth) 4))
-      ((r area) ())
+      ((r area))
     `)).toEqual(16);
   });
   it('can build a mutable object with method mutations', () => {
@@ -276,10 +287,10 @@ describe('objects', () => {
           )
         )
       ))
-      (def c (counter ()))
-      ((c inc) ())
-      ((c inc) ())
-      ((c count) ())
+      (def c (counter))
+      ((c inc))
+      ((c inc))
+      ((c count))
     `)).toEqual(2);
   });
 });
@@ -290,7 +301,7 @@ describe('mutability checks', () => {
     begin
       (const hi 3)
       (set hi 4)
-      (hi)
+      hi
     `)).toThrowErrorMatchingSnapshot();
   });
   it('allows updating def', () => {
@@ -298,7 +309,7 @@ describe('mutability checks', () => {
     begin
       (def hi 3)
       (set hi 4)
-      (hi)
+      hi
     `)).toEqual(4);
   });
   it('forbids redefining const', () => {
@@ -306,7 +317,7 @@ describe('mutability checks', () => {
     begin
       (const hi 3)
       (const hi 4)
-      (hi)
+      hi
     `)).toThrowErrorMatchingSnapshot();
   });
   it('forbids redefining def', () => {
